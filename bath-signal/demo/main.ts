@@ -23,28 +23,10 @@ createCallButton.onclick = async () => {
   let callId = await createCall();
   yourCallId.innerText = callId.toString();
 
-  let session = await joinCall(userId, callId, (remoteUserId, e) => {
-    console.log("a", remoteUserId);
-    let video = videos.get(remoteUserId);
-    if (!video) {
-      console.log("create", remoteUserId);
-      video = document.createElement("video") as HTMLVideoElement;
-      video.autoplay = true;
-      video.width = 500;
-      video.height = 500;
-      videosContainer.appendChild(video);
-    }
-    video.srcObject = e.streams[0];
-    videos.set(remoteUserId, video);
-  });
-};
-
-joinCallButton.onclick = async () => {
   let session = await joinCall(
     userId,
-    parseInt(joinCallInput.value),
+    callId,
     (remoteUserId, e) => {
-      console.log("e", remoteUserId);
       let video = videos.get(remoteUserId);
       if (!video) {
         video = document.createElement("video") as HTMLVideoElement;
@@ -55,6 +37,35 @@ joinCallButton.onclick = async () => {
       }
       video.srcObject = e.streams[0];
       videos.set(remoteUserId, video);
+    },
+    (remoteUserId) => {
+      let video = videos.get(remoteUserId)!;
+      videosContainer.removeChild(video);
+      videos.delete(remoteUserId);
+    },
+  );
+};
+
+joinCallButton.onclick = async () => {
+  let session = await joinCall(
+    userId,
+    parseInt(joinCallInput.value),
+    (remoteUserId, e) => {
+      let video = videos.get(remoteUserId);
+      if (!video) {
+        video = document.createElement("video") as HTMLVideoElement;
+        video.autoplay = true;
+        video.width = 500;
+        video.height = 500;
+        videosContainer.appendChild(video);
+      }
+      video.srcObject = e.streams[0];
+      videos.set(remoteUserId, video);
+    },
+    (remoteUserId) => {
+      let video = videos.get(remoteUserId)!;
+      videosContainer.removeChild(video);
+      videos.delete(remoteUserId);
     },
   );
 };

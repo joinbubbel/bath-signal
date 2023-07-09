@@ -190,6 +190,7 @@ async function joinCall(
   localUserId: UserId,
   callId: CallId,
   gotRemote: (userId: UserId, e: RTCTrackEvent) => void,
+  dropRemote: (userId: UserId) => void,
 ): Promise<CallSession> {
   let res = await bathSignalApiJoinQuery({
     call: callId,
@@ -201,7 +202,13 @@ async function joinCall(
     video: true,
   });
 
-  let call = new CallSession(stream, localUserId, callId, gotRemote);
+  let call = new CallSession(
+    stream,
+    localUserId,
+    callId,
+    gotRemote,
+    dropRemote,
+  );
   if (res.users) {
     for (let index in res.users) {
       const remoteUserId = res.users[index];
@@ -221,6 +228,7 @@ class CallSession {
   stream: MediaStream;
   peers: Map<UserId, RTCPeerConnection>;
   gotRemote: (userId: UserId, e: RTCTrackEvent) => void;
+  dropRemote: (userId: UserId) => void;
   iceBox: Map<UserId, Array<RTCIceCandidate>>;
   remoteDescriptionSet: boolean;
 
@@ -229,18 +237,20 @@ class CallSession {
     userId: UserId,
     callId: CallId,
     gotRemote: (userId: UserId, e: RTCTrackEvent) => void,
+    dropRemote: (userId: UserId) => void,
   ) {
     this.userId = userId;
     this.callId = callId;
     this.stream = stream;
     this.gotRemote = gotRemote;
+    this.dropRemote = dropRemote;
     this.peers = new Map();
     this.iceBox = new Map();
     this.remoteDescriptionSet = false;
 
     setInterval(async () => {
       this.poll();
-    }, 1000);
+    }, 2000);
   }
 
   async createPeerConnection(remoteUserId: UserId): Promise<RTCPeerConnection> {
@@ -284,6 +294,12 @@ class CallSession {
       });
       if (res.error) {
         throw "Got Error for Send ICE.";
+      }
+    };
+    peer.onconnectionstatechange = () => {
+      if (peer.connectionState == "disconnected") {
+        this.dropRemote(remoteUserId);
+        this.peers.delete(remoteUserId);
       }
     };
     peer.ontrack = (e) => {
@@ -350,7 +366,7 @@ class CallSession {
         let peer = await this.getInsertPeer(message.from);
         switch (message.ty) {
           case "IncomingOffer":
-              console.log("Got offer");
+            console.log("Got offer");
             await peer.setRemoteDescription(JSON.parse(message.data));
             this.remoteDescriptionSet = true;
             let answer = await peer.createAnswer();
