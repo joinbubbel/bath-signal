@@ -1,24 +1,24 @@
 use super::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ResJoinQuery {
     pub error: Option<JoinQueryError>,
     #[serde(flatten)]
     pub res: Option<JoinQueryOut>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JoinQuery {
     pub call: CallId,
     pub user: UserId,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JoinQueryOut {
     pub users: Vec<UserId>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum JoinQueryError {
     InvalidCallId,

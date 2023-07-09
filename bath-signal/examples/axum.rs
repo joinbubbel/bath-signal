@@ -38,6 +38,8 @@ async fn main() {
 async fn api_create_call(State(state): State<Arc<AppState>>) -> Json<ResCreateCall> {
     let mut call_state = state.call.write().unwrap();
 
+    eprintln!("<=== IN /api/call/create_call ===>\n{:?}\n", ());
+
     let res = match call_state.create_call() {
         Ok(res) => ResCreateCall {
             error: None,
@@ -49,6 +51,8 @@ async fn api_create_call(State(state): State<Arc<AppState>>) -> Json<ResCreateCa
         },
     };
 
+    eprintln!("<=== OUT /api/call/create_call ===>\n{:?}\n", res);
+
     Json(res)
 }
 
@@ -57,6 +61,8 @@ async fn api_join_query(
     Json(req): Json<JoinQuery>,
 ) -> Json<ResJoinQuery> {
     let mut call_state = state.call.write().unwrap();
+
+    eprintln!("<=== IN /api/call/join_query ===>\n{:?}\n", req);
 
     let res = match call_state.join_query(req) {
         Ok(res) => ResJoinQuery {
@@ -69,6 +75,8 @@ async fn api_join_query(
         },
     };
 
+    eprintln!("<=== OUT /api/call/join_query ===>\n{:?}\n", res);
+
     Json(res)
 }
 
@@ -78,10 +86,14 @@ async fn api_send_offer(
 ) -> Json<ResSendOffer> {
     let mut call_state = state.call.write().unwrap();
 
+    eprintln!("<=== IN /api/call/send_offer ===>\n{:?}\n", req);
+
     let res = match call_state.send_offer(req) {
         Ok(_) => ResSendOffer { error: None },
         Err(err) => ResSendOffer { error: Some(err) },
     };
+
+    eprintln!("<=== OUT /api/call/send_offer ===>\n{:?}\n", res);
 
     Json(res)
 }
@@ -92,10 +104,14 @@ async fn api_send_answer(
 ) -> Json<ResSendAnswer> {
     let mut call_state = state.call.write().unwrap();
 
+    eprintln!("<=== IN /api/call/send_answer ===>\n{:?}\n", req);
+
     let res = match call_state.send_answer(req) {
         Ok(_) => ResSendAnswer { error: None },
         Err(err) => ResSendAnswer { error: Some(err) },
     };
+
+    eprintln!("<=== OUT /api/call/send_answer ===>\n{:?}\n", res);
 
     Json(res)
 }
@@ -106,10 +122,14 @@ async fn api_send_ice(
 ) -> Json<ResSendICE> {
     let mut call_state = state.call.write().unwrap();
 
+    eprintln!("<=== IN /api/call/send_ice ===>\n{:?}\n", req);
+
     let res = match call_state.send_ice(req) {
         Ok(_) => ResSendICE { error: None },
         Err(err) => ResSendICE { error: Some(err) },
     };
+
+    eprintln!("<=== OUT /api/call/send_ice ===>\n{:?}\n", res);
 
     Json(res)
 }
@@ -119,6 +139,8 @@ async fn api_check_mailbox(
     Json(req): Json<CheckMailbox>,
 ) -> Json<ResCheckMailbox> {
     let mut call_state = state.call.write().unwrap();
+
+    eprintln!("<=== IN /api/call/check_mailbox ===>\n{:?}\n", req);
 
     let res = match call_state.check_mailbox(req) {
         Ok(res) => ResCheckMailbox {
@@ -130,6 +152,8 @@ async fn api_check_mailbox(
             res: None,
         },
     };
+
+    eprintln!("<=== OUT /api/call/check_mailbox ===>\n{:?}\n", res);
 
     Json(res)
 }

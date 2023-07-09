@@ -1,23 +1,23 @@
 use super::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ResCheckMailbox {
     pub error: Option<CheckMailboxError>,
     #[serde(flatten)]
     pub res: Option<CheckMailboxOut>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CheckMailbox {
     pub user: UserId,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CheckMailboxOut {
     pub messages: Vec<UserMail>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum CheckMailboxError {
     InvalidUserId,

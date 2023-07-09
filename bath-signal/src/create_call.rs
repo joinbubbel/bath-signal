@@ -1,18 +1,18 @@
 use super::*;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ResCreateCall {
     pub error: Option<CreateCallError>,
     #[serde(flatten)]
     pub res: Option<CreateCallOut>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CreateCallOut {
     pub call: CallId,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum CreateCallError {}
 
