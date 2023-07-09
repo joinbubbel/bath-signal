@@ -10,7 +10,6 @@ pub struct ResCheckMailbox {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct CheckMailbox {
     pub user: UserId,
-    pub from: UserId,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -33,7 +32,7 @@ impl CallState {
             .user_mail
             .get_mut(&req.user)
             .ok_or(CheckMailboxError::InvalidUserId)?;
-        let messages = mailbox.flush(req.from);
+        let messages = mailbox.flush();
         Ok(CheckMailboxOut { messages })
     }
 }

@@ -24,9 +24,10 @@ impl CallState {
             .user_mail
             .get_mut(&req.user)
             .ok_or(SendOfferError::InvalidCallId)?;
-        mailbox.push(req.from, UserMail {
+        mailbox.push(UserMail {
             ty: UserMailType::IncomingOffer,
             data: req.offer,
+            from: req.from,
         });
         Ok(())
     }

@@ -61,7 +61,6 @@ type ResSendICE = {
 
 type CheckMailbox = {
   user: string;
-  from: string;
 };
 
 type CheckMailboxError = {
@@ -71,6 +70,7 @@ type CheckMailboxError = {
 type MailboxMessage = {
   ty: string;
   data: string;
+  from: UserId;
 };
 
 type ResCheckMailbox = {
@@ -232,6 +232,10 @@ class CallSession {
     this.stream = stream;
     this.gotRemote = gotRemote;
     this.peers = new Map();
+
+    setInterval(async () => {
+      this.poll();
+    }, 1000);
   }
 
   async createPeerConnection(localUserId: UserId, remoteUserId: UserId) {
@@ -258,6 +262,7 @@ class CallSession {
       ],
     };
     const peer = new RTCPeerConnection(config);
+    this.peers.set(remoteUserId, peer);
     peer.onicecandidate = async (e) => {
       let res = await bathSignalApiSendICE({
         from: localUserId,
@@ -272,7 +277,9 @@ class CallSession {
       this.gotRemote(remoteUserId, e);
     };
 
-    this.stream.getTracks().forEach((track) => peer.addTrack(track));
+    this.stream
+      .getTracks()
+      .forEach((track) => peer.addTrack(track, this.stream));
 
     let offer = await peer.createOffer({
       offerToReceiveAudio: true,
@@ -292,43 +299,54 @@ class CallSession {
     } else {
       throw "Did not get offer SDP.";
     }
+  }
 
-    setInterval(async () => {
-      let res = await bathSignalApiCheckMailbox({
-        user: localUserId,
-        from: remoteUserId,
-      });
-      if (res.messages) {
-        for (let index in res.messages) {
-          const message = res.messages[index];
-          switch (message.ty) {
-            case "IncomingOffer":
-              peer.setRemoteDescription(JSON.parse(message.data));
-              let answer = await peer.createAnswer();
-              peer.setLocalDescription(answer);
-              let res = await bathSignalApiSendAnswer({
-                from: localUserId,
-                user: remoteUserId,
-                answer: JSON.stringify(answer),
-              });
-              if (res.error) {
-                throw "Got Error from Send Answer.";
-              }
-              break;
-            case "IncomingAnswer":
-              peer.setRemoteDescription(JSON.parse(message.data));
-              break;
-            case "IncomingICE":
-              peer.addIceCandidate(JSON.parse(message.data));
-              break;
-            default:
-              throw "Got Unknown Message from Mailbox.";
-          }
+  async getInsertPeer(remoteUserId: UserId): Promise<RTCPeerConnection> {
+    let peer = this.peers.get(remoteUserId);
+    if (!peer) {
+      await this.createPeerConnection(this.userId, remoteUserId);
+      return this.peers.get(remoteUserId)!;
+    } else {
+      return peer;
+    }
+  }
+
+  async poll() {
+    const localUserId = this.userId;
+    let res = await bathSignalApiCheckMailbox({
+      user: localUserId,
+    });
+    if (res.messages) {
+      for (let index in res.messages) {
+        const message = res.messages[index];
+        switch (message.ty) {
+          case "IncomingOffer":
+            peer.setRemoteDescription(JSON.parse(message.data));
+            let answer = await peer.createAnswer();
+            peer.setLocalDescription(answer);
+            let res = await bathSignalApiSendAnswer({
+              from: localUserId,
+              user: remoteUserId,
+              answer: JSON.stringify(answer),
+            });
+            console.log("sending answer");
+            if (res.error) {
+              throw "Got Error from Send Answer.";
+            }
+            break;
+          case "IncomingAnswer":
+            peer.setRemoteDescription(JSON.parse(message.data));
+            break;
+          case "IncomingICE":
+            peer.addIceCandidate(JSON.parse(message.data));
+            break;
+          default:
+            throw "Got Unknown Message from Mailbox.";
         }
-      } else {
-        throw "Got Error from Check Mailbox.";
       }
-    }, 1000);
+    } else {
+      throw "Got Error from Check Mailbox.";
+    }
   }
 }
 

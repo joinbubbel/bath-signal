@@ -60,6 +60,7 @@ fn main() {
         SendOffer {
             user: UserId(String::from("Hi")),
             offer: String::from("Hi"),
+            from: UserId(String::from("Hi")),
         },
     );
 
@@ -79,6 +80,7 @@ fn main() {
         SendAnswer {
             user: UserId(String::from("Hi")),
             answer: String::from("Hi"),
+            from: UserId(String::from("Hi")),
         },
     );
 
@@ -98,6 +100,7 @@ fn main() {
         SendICE {
             user: UserId(String::from("Hi")),
             ice: String::from("Hi"),
+            from: UserId(String::from("Hi")),
         },
     );
 
@@ -130,14 +133,17 @@ fn main() {
                     UserMail {
                         ty: UserMailType::IncomingOffer,
                         data: String::from("Hi"),
+                        from: UserId(String::from("Hi")),
                     },
                     UserMail {
                         ty: UserMailType::IncomingAnswer,
                         data: String::from("Hi"),
+                        from: UserId(String::from("Hi")),
                     },
                     UserMail {
                         ty: UserMailType::IncomingICE,
                         data: String::from("Hi"),
+                        from: UserId(String::from("Hi")),
                     },
                 ],
             }),
