@@ -24,6 +24,7 @@ async fn main() {
         .route("/api/call/join_query", post(api_join_query))
         .route("/api/call/send_offer", post(api_send_offer))
         .route("/api/call/send_answer", post(api_send_answer))
+        .route("/api/call/send_ice", post(api_send_ice))
         .route("/api/call/check_mailbox", post(api_check_mailbox))
         .with_state(state);
 
@@ -94,6 +95,20 @@ async fn api_send_answer(
     let res = match call_state.send_answer(req) {
         Ok(_) => ResSendAnswer { error: None },
         Err(err) => ResSendAnswer { error: Some(err) },
+    };
+
+    Json(res)
+}
+
+async fn api_send_ice(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<SendICE>,
+) -> Json<ResSendICE> {
+    let mut call_state = state.call.write().unwrap();
+
+    let res = match call_state.send_ice(req) {
+        Ok(_) => ResSendICE { error: None },
+        Err(err) => ResSendICE { error: Some(err) },
     };
 
     Json(res)

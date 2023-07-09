@@ -91,6 +91,25 @@ fn main() {
         },
     );
 
+    //  SendICE
+    gen_ty(
+        new_acc(&lang),
+        "SendICE",
+        SendICE {
+            user: UserId(String::from("Hi")),
+            ice: String::from("Hi"),
+        },
+    );
+
+    //  ResSendICE
+    gen_ty(
+        new_acc(&lang),
+        "ResSendICE",
+        ResSendICE {
+            error: Some(SendICEError::InvalidCallId),
+        },
+    );
+
     //  CheckMailbox
     gen_ty(
         new_acc(&lang),

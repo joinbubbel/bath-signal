@@ -8,6 +8,7 @@ mod join_query;
 mod leave;
 mod mailbox;
 mod send_answer;
+mod send_ice;
 mod send_offer;
 
 pub use check_mailbox::{CheckMailbox, CheckMailboxError, CheckMailboxOut, ResCheckMailbox};
@@ -16,6 +17,7 @@ pub use join_query::{JoinQuery, JoinQueryError, JoinQueryOut, ResJoinQuery};
 pub use leave::{Leave, LeaveError};
 pub use mailbox::{UserMail, UserMailType};
 pub use send_answer::{ResSendAnswer, SendAnswer, SendAnswerError};
+pub use send_ice::{ResSendICE, SendICE, SendICEError};
 pub use send_offer::{ResSendOffer, SendOffer, SendOfferError};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, PartialEq, Eq)]
