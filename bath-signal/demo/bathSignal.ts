@@ -221,6 +221,8 @@ class CallSession {
   stream: MediaStream;
   peers: Map<UserId, RTCPeerConnection>;
   gotRemote: (userId: UserId, e: RTCTrackEvent) => void;
+  iceBox: Array<[UserId, RTCIceCandidate]>;
+  remoteDescriptionSet: boolean;
 
   constructor(
     stream: MediaStream,
@@ -233,6 +235,8 @@ class CallSession {
     this.stream = stream;
     this.gotRemote = gotRemote;
     this.peers = new Map();
+    this.iceBox = [];
+    this.remoteDescriptionSet = false;
 
     setInterval(async () => {
       this.poll();
@@ -265,10 +269,19 @@ class CallSession {
     const peer = new RTCPeerConnection(config);
     this.peers.set(remoteUserId, peer);
     peer.onicecandidate = async (e) => {
+      const message = {
+        candidate: null,
+      } as any;
+      if (e.candidate) {
+        message.candidate = e.candidate.candidate;
+        message.sdpMid = e.candidate.sdpMid;
+        message.sdpMLineIndex = e.candidate.sdpMLineIndex;
+      }
+      console.log(message);
       let res = await bathSignalApiSendICE({
         from: this.userId,
         user: remoteUserId,
-        ice: JSON.stringify(e.candidate),
+        ice: JSON.stringify(message),
       });
       if (res.error) {
         throw "Got Error for Send ICE.";
@@ -286,7 +299,6 @@ class CallSession {
   }
 
   async createPeerOffer(peer: RTCPeerConnection, remoteUserId: UserId) {
-      
     let offer = await peer.createOffer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: true,
@@ -305,7 +317,6 @@ class CallSession {
     } else {
       throw "Did not get offer SDP.";
     }
-
   }
 
   async getInsertPeer(remoteUserId: UserId): Promise<RTCPeerConnection> {
@@ -322,14 +333,26 @@ class CallSession {
     let res = await bathSignalApiCheckMailbox({
       user: localUserId,
     });
+
+    if (this.remoteDescriptionSet) {
+      for (let index in this.iceBox) {
+        let [from, ice] = this.iceBox[index];
+        let peer = await this.getInsertPeer(from);
+        await peer.addIceCandidate(ice);
+      }
+    }
+
     if (res.messages) {
+      console.log("got:", res.messages);
       for (let index in res.messages) {
         const message = res.messages[index];
         let peer = await this.getInsertPeer(message.from);
         switch (message.ty) {
           case "IncomingOffer":
-              console.log("incoming offer", Date.now());
+            console.log("offer", message);
+            console.log("incoming offer", Date.now());
             await peer.setRemoteDescription(JSON.parse(message.data));
+            this.remoteDescriptionSet = true;
             let answer = await peer.createAnswer();
             await peer.setLocalDescription(answer);
             let res = await bathSignalApiSendAnswer({
@@ -342,11 +365,20 @@ class CallSession {
             }
             break;
           case "IncomingAnswer":
-              console.log("incoming answer", Date.now());
+            console.log("answer", message);
+            console.log("incoming answer", Date.now());
             await peer.setRemoteDescription(JSON.parse(message.data));
+            this.remoteDescriptionSet = true;
             break;
           case "IncomingICE":
-            await peer.addIceCandidate(JSON.parse(message.data));
+            let candidate = JSON.parse(message.data);
+            if (candidate.candidate) {
+              if (this.remoteDescriptionSet) {
+                await peer.addIceCandidate(candidate);
+              } else {
+                this.iceBox.push([message.from, candidate]);
+              }
+            }
             break;
           default:
             throw "Got Unknown Message from Mailbox.";
