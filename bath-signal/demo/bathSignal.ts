@@ -189,8 +189,9 @@ async function createCall(): Promise<CallId> {
 async function joinCall(
   localUserId: UserId,
   callId: CallId,
-  gotRemote: (userId: UserId, e: RTCTrackEvent) => void,
-  dropRemote: (userId: UserId) => void,
+  yourVideo: HTMLVideoElement | null,
+  gotRemote: ((userId: UserId, e: RTCTrackEvent) => void) | null,
+  dropRemote: ((userId: UserId) => void) | null,
 ): Promise<CallSession> {
   let res = await bathSignalApiJoinQuery({
     call: callId,
@@ -202,12 +203,16 @@ async function joinCall(
     video: true,
   });
 
+  if (yourVideo) {
+    yourVideo.srcObject = stream;
+  }
+
   let call = new CallSession(
     stream,
     localUserId,
     callId,
-    gotRemote,
-    dropRemote,
+    gotRemote ? gotRemote : () => {},
+    dropRemote ? dropRemote : () => {},
   );
   if (res.users) {
     for (let index in res.users) {

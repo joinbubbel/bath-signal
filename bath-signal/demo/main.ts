@@ -14,6 +14,7 @@ const joinCallInput = document.getElementById(
   "join_call_input",
 ) as HTMLInputElement;
 
+const yourVideo = document.getElementById("your_video") as HTMLVideoElement;
 const videosContainer = document.getElementById("videos") as HTMLDivElement;
 const videos: Map<UserId, HTMLVideoElement> = new Map();
 
@@ -26,13 +27,14 @@ createCallButton.onclick = async () => {
   let session = await joinCall(
     userId,
     callId,
+    yourVideo,
     (remoteUserId, e) => {
       let video = videos.get(remoteUserId);
       if (!video) {
         video = document.createElement("video") as HTMLVideoElement;
         video.autoplay = true;
-        video.width = 500;
-        video.height = 500;
+        video.width = 300;
+        video.height = 300;
         videosContainer.appendChild(video);
       }
       video.srcObject = e.streams[0];
@@ -50,13 +52,14 @@ joinCallButton.onclick = async () => {
   let session = await joinCall(
     userId,
     parseInt(joinCallInput.value),
+    yourVideo,
     (remoteUserId, e) => {
       let video = videos.get(remoteUserId);
       if (!video) {
         video = document.createElement("video") as HTMLVideoElement;
         video.autoplay = true;
-        video.width = 500;
-        video.height = 500;
+        video.width = 300;
+        video.height = 300;
         videosContainer.appendChild(video);
       }
       video.srcObject = e.streams[0];
