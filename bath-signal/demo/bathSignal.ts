@@ -221,7 +221,7 @@ class CallSession {
   stream: MediaStream;
   peers: Map<UserId, RTCPeerConnection>;
   gotRemote: (userId: UserId, e: RTCTrackEvent) => void;
-  iceBox: Array<[UserId, RTCIceCandidate]>;
+  iceBox: Map<UserId, Array<RTCIceCandidate>>;
   remoteDescriptionSet: boolean;
 
   constructor(
@@ -235,7 +235,7 @@ class CallSession {
     this.stream = stream;
     this.gotRemote = gotRemote;
     this.peers = new Map();
-    this.iceBox = [];
+    this.iceBox = new Map();
     this.remoteDescriptionSet = false;
 
     setInterval(async () => {
@@ -277,7 +277,6 @@ class CallSession {
         message.sdpMid = e.candidate.sdpMid;
         message.sdpMLineIndex = e.candidate.sdpMLineIndex;
       }
-      console.log(message);
       let res = await bathSignalApiSendICE({
         from: this.userId,
         user: remoteUserId,
@@ -335,22 +334,23 @@ class CallSession {
     });
 
     if (this.remoteDescriptionSet) {
-      for (let index in this.iceBox) {
-        let [from, ice] = this.iceBox[index];
-        let peer = await this.getInsertPeer(from);
-        await peer.addIceCandidate(ice);
+      for (let userId in this.iceBox) {
+        let ices = this.iceBox.get(userId)!;
+        let peer = await this.getInsertPeer(userId);
+        for (let iceIndex in ices) {
+          let ice = ices[iceIndex];
+          await peer.addIceCandidate(ice);
+        }
       }
     }
 
     if (res.messages) {
-      console.log("got:", res.messages);
       for (let index in res.messages) {
         const message = res.messages[index];
         let peer = await this.getInsertPeer(message.from);
         switch (message.ty) {
           case "IncomingOffer":
-            console.log("offer", message);
-            console.log("incoming offer", Date.now());
+              console.log("Got offer");
             await peer.setRemoteDescription(JSON.parse(message.data));
             this.remoteDescriptionSet = true;
             let answer = await peer.createAnswer();
@@ -365,8 +365,6 @@ class CallSession {
             }
             break;
           case "IncomingAnswer":
-            console.log("answer", message);
-            console.log("incoming answer", Date.now());
             await peer.setRemoteDescription(JSON.parse(message.data));
             this.remoteDescriptionSet = true;
             break;
@@ -376,7 +374,10 @@ class CallSession {
               if (this.remoteDescriptionSet) {
                 await peer.addIceCandidate(candidate);
               } else {
-                this.iceBox.push([message.from, candidate]);
+                if (!this.iceBox.get(message.from)) {
+                  this.iceBox.set(message.from, []);
+                }
+                this.iceBox.get(message.from)!.push(candidate);
               }
             }
             break;
@@ -390,4 +391,4 @@ class CallSession {
   }
 }
 
-export { createCall, joinCall, CallSession };
+export { createCall, joinCall, CallSession, type UserId };

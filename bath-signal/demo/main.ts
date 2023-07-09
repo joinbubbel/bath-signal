@@ -1,6 +1,6 @@
-import { createCall, joinCall, CallSession } from "./bathSignal";
+import { createCall, joinCall, UserId } from "./bathSignal";
 
-const userId = Math.floor(Math.random() * 10000).toString();
+const userId = Math.floor(Math.random() * 100000000).toString();
 
 const yourUserId = document.getElementById("your_user_id") as HTMLDivElement;
 const yourCallId = document.getElementById("your_call_id") as HTMLDivElement;
@@ -13,7 +13,9 @@ const joinCallButton = document.getElementById(
 const joinCallInput = document.getElementById(
   "join_call_input",
 ) as HTMLInputElement;
-const video = document.getElementById("video") as HTMLVideoElement;
+
+const videosContainer = document.getElementById("videos") as HTMLDivElement;
+const videos: Map<UserId, HTMLVideoElement> = new Map();
 
 yourUserId.innerText = userId;
 
@@ -21,8 +23,19 @@ createCallButton.onclick = async () => {
   let callId = await createCall();
   yourCallId.innerText = callId.toString();
 
-  let session = await joinCall(userId, callId, (_, e) => {
+  let session = await joinCall(userId, callId, (remoteUserId, e) => {
+    console.log("a", remoteUserId);
+    let video = videos.get(remoteUserId);
+    if (!video) {
+      console.log("create", remoteUserId);
+      video = document.createElement("video") as HTMLVideoElement;
+      video.autoplay = true;
+      video.width = 500;
+      video.height = 500;
+      videosContainer.appendChild(video);
+    }
     video.srcObject = e.streams[0];
+    videos.set(remoteUserId, video);
   });
 };
 
@@ -30,8 +43,18 @@ joinCallButton.onclick = async () => {
   let session = await joinCall(
     userId,
     parseInt(joinCallInput.value),
-    (_, e) => {
+    (remoteUserId, e) => {
+      console.log("e", remoteUserId);
+      let video = videos.get(remoteUserId);
+      if (!video) {
+        video = document.createElement("video") as HTMLVideoElement;
+        video.autoplay = true;
+        video.width = 500;
+        video.height = 500;
+        videosContainer.appendChild(video);
+      }
       video.srcObject = e.streams[0];
+      videos.set(remoteUserId, video);
     },
   );
 };
