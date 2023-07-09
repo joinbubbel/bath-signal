@@ -184,10 +184,9 @@ async function createCall(): Promise<CallId> {
 }
 
 async function joinCall(
-  video: HTMLVideoElement,
   userId: UserId,
   callId: CallId,
-  gotRemote: (userId: UserId, track: MediaStreamTrack) => void,
+  gotRemote: (userId: UserId, e: RTCTrackEvent) => void,
 ): Promise<CallSession> {
   let res = await bathSignalApiJoinQuery({
     call: callId,
@@ -217,13 +216,13 @@ class CallSession {
   callId: CallId;
   stream: MediaStream;
   peers: Map<UserId, RTCPeerConnection>;
-  gotRemote: (userId: UserId, track: MediaStreamTrack) => void;
+  gotRemote: (userId: UserId, e: RTCTrackEvent) => void;
 
   constructor(
     stream: MediaStream,
     userId: UserId,
     callId: CallId,
-    gotRemote: (userId: UserId, track: MediaStreamTrack) => void,
+    gotRemote: (userId: UserId, e: RTCTrackEvent) => void,
   ) {
     this.userId = userId;
     this.callId = callId;
@@ -256,14 +255,17 @@ class CallSession {
       ],
     };
     const peer = new RTCPeerConnection(config);
-    peer.onicecandidate = (e) => {
-      bathSignalApiSendICE({
+    peer.onicecandidate = async (e) => {
+      let res = await bathSignalApiSendICE({
         user: userId,
         ice: JSON.stringify(e.candidate),
       });
+      if (res.error) {
+        throw "Got Error for Send ICE.";
+      }
     };
     peer.ontrack = (e) => {
-      this.gotRemote(userId, e.track);
+      this.gotRemote(userId, e);
     };
 
     this.stream.getTracks().forEach((track) => peer.addTrack(track));
@@ -280,7 +282,7 @@ class CallSession {
         offer: JSON.stringify(offer),
       });
       if (res.error) {
-        throw "Got Error from Send Offer";
+        throw "Got Error from Send Offer.";
       }
     } else {
       throw "Did not get offer SDP.";
@@ -303,7 +305,7 @@ class CallSession {
                 answer: JSON.stringify(answer),
               });
               if (res.error) {
-                throw "Got Error from Send Answer";
+                throw "Got Error from Send Answer.";
               }
               break;
             case "IncomingAnswer":
@@ -313,11 +315,11 @@ class CallSession {
               peer.addIceCandidate(JSON.parse(message.data));
               break;
             default:
-              throw "Got Unknown Message from Mailbox";
+              throw "Got Unknown Message from Mailbox.";
           }
         }
       } else {
-        throw "Got Error from Check Mailbox";
+        throw "Got Error from Check Mailbox.";
       }
     }, 1000);
   }

@@ -1,13 +1,18 @@
 use axum::{
     extract::{Json, State},
+    http::{Method, Request, Response},
     routing::post,
     Router,
 };
 use bath_signal::*;
+use hyper::Body;
 use std::{
+    convert::Infallible,
     net::SocketAddr,
     sync::{Arc, RwLock},
 };
+use tower::{Service, ServiceBuilder, ServiceExt};
+use tower_http::cors::{Any, CorsLayer};
 
 pub struct AppState {
     call: RwLock<CallState>,
@@ -19,7 +24,16 @@ async fn main() {
         call: RwLock::new(CallState::new()),
     });
 
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_origin(Any);
+    async fn handle(_: Request<Body>) -> Result<Response<Body>, Infallible> {
+        Ok(Response::new(Body::empty()))
+    }
+    // let mut service = ServiceBuilder::new().layer(cors).service_fn(handle);
+
     let app = Router::new()
+        .layer(cors)
         .route("/api/call/create_call", post(api_create_call))
         .route("/api/call/join_query", post(api_join_query))
         .route("/api/call/send_offer", post(api_send_offer))
