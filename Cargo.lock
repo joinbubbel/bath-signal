@@ -103,10 +103,8 @@ name = "bath-signal"
 version = "0.1.0"
 dependencies = [
  "axum",
- "hyper",
  "serde",
  "tokio",
- "tower",
  "tower-http",
 ]
 
