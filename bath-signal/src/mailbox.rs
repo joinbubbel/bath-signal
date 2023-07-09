@@ -1,11 +1,16 @@
 use super::*;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(tag = "type")]
-pub enum UserMail {
-    IncomingOffer(String),
-    IncomingAnswer(String),
-    IncomingICE(String),
+pub struct UserMail {
+    pub ty: UserMailType,
+    pub data: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub enum UserMailType {
+    IncomingOffer,
+    IncomingAnswer,
+    IncomingICE,
 }
 
 #[derive(Default, Debug, Clone)]

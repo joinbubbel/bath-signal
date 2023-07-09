@@ -1,4 +1,4 @@
-use mailbox::{Mailbox, UserMail};
+use mailbox::Mailbox;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -14,13 +14,14 @@ pub use check_mailbox::{CheckMailbox, CheckMailboxError, CheckMailboxOut, ResChe
 pub use create_call::{CreateCallError, CreateCallOut, ResCreateCall};
 pub use join_query::{JoinQuery, JoinQueryError, JoinQueryOut, ResJoinQuery};
 pub use leave::{Leave, LeaveError};
+pub use mailbox::{UserMail, UserMailType};
 pub use send_answer::{ResSendAnswer, SendAnswer, SendAnswerError};
 pub use send_offer::{ResSendOffer, SendOffer, SendOfferError};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, PartialEq, Eq)]
 pub struct UserId(pub String);
 #[derive(Serialize, Deserialize, Debug, Clone, Hash, PartialEq, Eq)]
-pub struct CallId(usize);
+pub struct CallId(pub usize);
 
 #[derive(Debug, Default, Clone)]
 pub struct CallState {

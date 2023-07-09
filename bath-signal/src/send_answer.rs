@@ -23,7 +23,10 @@ impl CallState {
             .user_mail
             .get_mut(&req.user)
             .ok_or(SendAnswerError::InvalidUserId)?;
-        mailbox.push(UserMail::IncomingAnswer(req.answer));
+        mailbox.push(UserMail {
+            ty: UserMailType::IncomingAnswer,
+            data: req.answer,
+        });
         Ok(())
     }
 }
