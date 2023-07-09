@@ -365,6 +365,7 @@ class CallSession {
           let ice = ices[iceIndex];
           await peer.addIceCandidate(ice);
         }
+        ices = [];
       }
     }
 
