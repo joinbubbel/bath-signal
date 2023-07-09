@@ -8,6 +8,7 @@ pub struct ResSendICE {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SendICE {
     pub user: UserId,
+    pub from: UserId,
     pub ice: String,
 }
 
@@ -23,10 +24,13 @@ impl CallState {
             .user_mail
             .get_mut(&req.user)
             .ok_or(SendICEError::InvalidCallId)?;
-        mailbox.push(UserMail {
-            ty: UserMailType::IncomingICE,
-            data: req.ice,
-        });
+        mailbox.push(
+            req.from,
+            UserMail {
+                ty: UserMailType::IncomingICE,
+                data: req.ice,
+            },
+        );
         Ok(())
     }
 }

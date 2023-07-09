@@ -19,6 +19,7 @@ type ResJoinQuery = {
 
 type SendOffer = {
   user: string;
+  from: string;
   offer: string;
 };
 
@@ -32,6 +33,7 @@ type ResSendOffer = {
 
 type SendAnswer = {
   user: string;
+  from: string;
   answer: string;
 };
 
@@ -45,6 +47,7 @@ type ResSendAnswer = {
 
 type SendICE = {
   user: string;
+  from: string;
   ice: string;
 };
 
@@ -257,6 +260,7 @@ class CallSession {
     const peer = new RTCPeerConnection(config);
     peer.onicecandidate = async (e) => {
       let res = await bathSignalApiSendICE({
+        from: localUserId,
         user: remoteUserId,
         ice: JSON.stringify(e.candidate),
       });
@@ -278,6 +282,7 @@ class CallSession {
 
     if (offer.sdp) {
       let res = await bathSignalApiSendOffer({
+        from: localUserId,
         user: remoteUserId,
         offer: JSON.stringify(offer),
       });
@@ -302,6 +307,7 @@ class CallSession {
               let answer = await peer.createAnswer();
               peer.setLocalDescription(answer);
               let res = await bathSignalApiSendAnswer({
+                from: localUserId,
                 user: remoteUserId,
                 answer: JSON.stringify(answer),
               });

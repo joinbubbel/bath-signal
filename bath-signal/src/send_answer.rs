@@ -8,6 +8,7 @@ pub struct ResSendAnswer {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SendAnswer {
     pub user: UserId,
+    pub from: UserId,
     pub answer: String,
 }
 
@@ -23,10 +24,13 @@ impl CallState {
             .user_mail
             .get_mut(&req.user)
             .ok_or(SendAnswerError::InvalidUserId)?;
-        mailbox.push(UserMail {
-            ty: UserMailType::IncomingAnswer,
-            data: req.answer,
-        });
+        mailbox.push(
+            req.from,
+            UserMail {
+                ty: UserMailType::IncomingAnswer,
+                data: req.answer,
+            },
+        );
         Ok(())
     }
 }
