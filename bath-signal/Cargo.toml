@@ -2,6 +2,12 @@
 name = "bath-signal"
 version = "0.1.0"
 edition = "2021"
+description = "A generic WebRTC signalling implementation."
+repository = "https://github.com/joinbubbel/bath-signal"
+homepage = "https://github.com/joinbubbel/bath-signal"
+license = "MIT"
+keywords = []
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
