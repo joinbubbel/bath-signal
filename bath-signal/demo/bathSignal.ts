@@ -230,7 +230,7 @@ class CallSession {
   gotRemote: (userId: UserId, e: RTCTrackEvent) => void;
   dropRemote: (userId: UserId) => void;
   iceBox: Map<UserId, Array<RTCIceCandidate>>;
-  remoteDescriptionSet: boolean;
+  remoteDescriptionsSet: Array<UserId>;
 
   constructor(
     stream: MediaStream,
@@ -246,7 +246,7 @@ class CallSession {
     this.dropRemote = dropRemote;
     this.peers = new Map();
     this.iceBox = new Map();
-    this.remoteDescriptionSet = false;
+    this.remoteDescriptionsSet = [];
 
     setInterval(async () => {
       this.poll();
@@ -300,6 +300,9 @@ class CallSession {
       if (peer.connectionState == "disconnected") {
         this.dropRemote(remoteUserId);
         this.peers.delete(remoteUserId);
+        delete this.remoteDescriptionsSet[
+          this.remoteDescriptionsSet.indexOf(remoteUserId)
+        ];
       }
     };
     peer.ontrack = (e) => {
@@ -349,8 +352,8 @@ class CallSession {
       user: localUserId,
     });
 
-    if (this.remoteDescriptionSet) {
-      for (let userId in this.iceBox) {
+    for (let userId in this.iceBox) {
+      if (this.remoteDescriptionsSet.includes(userId)) {
         let ices = this.iceBox.get(userId)!;
         let peer = await this.getInsertPeer(userId);
         for (let iceIndex in ices) {
@@ -368,7 +371,7 @@ class CallSession {
           case "IncomingOffer":
             console.log("Got offer");
             await peer.setRemoteDescription(JSON.parse(message.data));
-            this.remoteDescriptionSet = true;
+            this.remoteDescriptionsSet.push(message.from);
             let answer = await peer.createAnswer();
             await peer.setLocalDescription(answer);
             let res = await bathSignalApiSendAnswer({
@@ -382,12 +385,12 @@ class CallSession {
             break;
           case "IncomingAnswer":
             await peer.setRemoteDescription(JSON.parse(message.data));
-            this.remoteDescriptionSet = true;
+            this.remoteDescriptionsSet.push(message.from);
             break;
           case "IncomingICE":
             let candidate = JSON.parse(message.data);
             if (candidate.candidate) {
-              if (this.remoteDescriptionSet) {
+              if (this.remoteDescriptionsSet.includes(message.from)) {
                 await peer.addIceCandidate(candidate);
               } else {
                 if (!this.iceBox.get(message.from)) {
