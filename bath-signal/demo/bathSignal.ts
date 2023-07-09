@@ -205,7 +205,8 @@ async function joinCall(
   if (res.users) {
     for (let index in res.users) {
       const remoteUserId = res.users[index];
-      call.createPeerConnection(localUserId, remoteUserId);
+      const peer = await call.createPeerConnection(remoteUserId);
+      await call.createPeerOffer(peer, remoteUserId);
     }
   } else {
     throw "Got Error from Join Query.";
@@ -238,7 +239,7 @@ class CallSession {
     }, 1000);
   }
 
-  async createPeerConnection(localUserId: UserId, remoteUserId: UserId) {
+  async createPeerConnection(remoteUserId: UserId): Promise<RTCPeerConnection> {
     const config = {
       iceServers: [
         { urls: "stun:stun.stunprotocol.org:3478" },
@@ -265,7 +266,7 @@ class CallSession {
     this.peers.set(remoteUserId, peer);
     peer.onicecandidate = async (e) => {
       let res = await bathSignalApiSendICE({
-        from: localUserId,
+        from: this.userId,
         user: remoteUserId,
         ice: JSON.stringify(e.candidate),
       });
@@ -281,6 +282,11 @@ class CallSession {
       .getTracks()
       .forEach((track) => peer.addTrack(track, this.stream));
 
+    return peer;
+  }
+
+  async createPeerOffer(peer: RTCPeerConnection, remoteUserId: UserId) {
+      
     let offer = await peer.createOffer({
       offerToReceiveAudio: true,
       offerToReceiveVideo: true,
@@ -289,7 +295,7 @@ class CallSession {
 
     if (offer.sdp) {
       let res = await bathSignalApiSendOffer({
-        from: localUserId,
+        from: this.userId,
         user: remoteUserId,
         offer: JSON.stringify(offer),
       });
@@ -299,13 +305,13 @@ class CallSession {
     } else {
       throw "Did not get offer SDP.";
     }
+
   }
 
   async getInsertPeer(remoteUserId: UserId): Promise<RTCPeerConnection> {
     let peer = this.peers.get(remoteUserId);
     if (!peer) {
-      await this.createPeerConnection(this.userId, remoteUserId);
-      return this.peers.get(remoteUserId)!;
+      return await this.createPeerConnection(remoteUserId);
     } else {
       return peer;
     }
@@ -319,26 +325,28 @@ class CallSession {
     if (res.messages) {
       for (let index in res.messages) {
         const message = res.messages[index];
+        let peer = await this.getInsertPeer(message.from);
         switch (message.ty) {
           case "IncomingOffer":
-            peer.setRemoteDescription(JSON.parse(message.data));
+              console.log("incoming offer", Date.now());
+            await peer.setRemoteDescription(JSON.parse(message.data));
             let answer = await peer.createAnswer();
-            peer.setLocalDescription(answer);
+            await peer.setLocalDescription(answer);
             let res = await bathSignalApiSendAnswer({
               from: localUserId,
-              user: remoteUserId,
+              user: message.from,
               answer: JSON.stringify(answer),
             });
-            console.log("sending answer");
             if (res.error) {
               throw "Got Error from Send Answer.";
             }
             break;
           case "IncomingAnswer":
-            peer.setRemoteDescription(JSON.parse(message.data));
+              console.log("incoming answer", Date.now());
+            await peer.setRemoteDescription(JSON.parse(message.data));
             break;
           case "IncomingICE":
-            peer.addIceCandidate(JSON.parse(message.data));
+            await peer.addIceCandidate(JSON.parse(message.data));
             break;
           default:
             throw "Got Unknown Message from Mailbox.";
