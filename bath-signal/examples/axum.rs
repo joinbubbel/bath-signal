@@ -1,6 +1,5 @@
 use axum::{
     extract::{Json, State},
-    http::Method,
     routing::{get, post},
     Router,
 };
@@ -10,7 +9,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 use tower::ServiceBuilder;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 
 pub struct AppState {
     call: RwLock<CallState>,
@@ -22,9 +21,7 @@ async fn main() {
         call: RwLock::new(CallState::new()),
     });
 
-    let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
-        .allow_origin(Any);
+    let cors = CorsLayer::very_permissive();
 
     let app = Router::new()
         .route("/", get(|| async { "Hello, World" }))
