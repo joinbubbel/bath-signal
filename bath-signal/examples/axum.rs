@@ -1,7 +1,7 @@
 use axum::{
     extract::{Json, State},
     http::Method,
-    routing::post,
+    routing::{get, post},
     Router,
 };
 use bath_signal::*;
@@ -9,6 +9,7 @@ use std::{
     net::SocketAddr,
     sync::{Arc, RwLock},
 };
+use tower::ServiceBuilder;
 use tower_http::cors::{Any, CorsLayer};
 
 pub struct AppState {
@@ -26,13 +27,14 @@ async fn main() {
         .allow_origin(Any);
 
     let app = Router::new()
+        .route("/", get(|| async { "Hello, World" }))
         .route("/api/call/create_call", post(api_create_call))
         .route("/api/call/join_query", post(api_join_query))
         .route("/api/call/send_offer", post(api_send_offer))
         .route("/api/call/send_answer", post(api_send_answer))
         .route("/api/call/send_ice", post(api_send_ice))
         .route("/api/call/check_mailbox", post(api_check_mailbox))
-        .layer(cors)
+        .layer(ServiceBuilder::new().layer(cors))
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));

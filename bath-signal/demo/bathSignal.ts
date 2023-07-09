@@ -80,7 +80,6 @@ async function bathSignalApiCreateCall() {
     {
       method: "post",
       headers: {
-        Accept: "application/json",
         "Content-Type": "application/json",
       },
       body: JSON.stringify({}),
@@ -96,7 +95,6 @@ async function bathSignalApiJoinQuery(req: JoinQuery): Promise<ResJoinQuery> {
     {
       method: "post",
       headers: {
-        Accept: "application/json",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(req),
@@ -112,7 +110,6 @@ async function bathSignalApiSendOffer(req: SendOffer): Promise<ResSendOffer> {
     {
       method: "post",
       headers: {
-        Accept: "application/json",
         "Content-Type": "application/json",
       },
 
@@ -131,7 +128,6 @@ async function bathSignalApiSendAnswer(
     {
       method: "post",
       headers: {
-        Accept: "application/json",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(req),
@@ -147,7 +143,6 @@ async function bathSignalApiSendICE(req: SendICE): Promise<ResSendICE> {
     {
       method: "post",
       headers: {
-        Accept: "application/json",
         "Content-Type": "application/json",
       },
       body: JSON.stringify(req),
@@ -165,7 +160,6 @@ async function bathSignalApiCheckMailbox(
     {
       method: "post",
       headers: {
-        Accept: "application/json",
         "Content-Type": "application/json",
       },
 
