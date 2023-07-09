@@ -8,6 +8,7 @@ pub struct ResSendOffer {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SendOffer {
     pub user: UserId,
+    pub from: UserId,
     pub offer: String,
 }
 
@@ -23,7 +24,7 @@ impl CallState {
             .user_mail
             .get_mut(&req.user)
             .ok_or(SendOfferError::InvalidCallId)?;
-        mailbox.push(UserMail {
+        mailbox.push(req.from, UserMail {
             ty: UserMailType::IncomingOffer,
             data: req.offer,
         });

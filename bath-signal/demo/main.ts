@@ -10,17 +10,28 @@ const createCallButton = document.getElementById(
 const joinCallButton = document.getElementById(
   "join_call",
 ) as HTMLButtonElement;
+const joinCallInput = document.getElementById(
+  "join_call_input",
+) as HTMLInputElement;
 const video = document.getElementById("video") as HTMLVideoElement;
 
 yourUserId.innerText = userId;
 
 createCallButton.onclick = async () => {
   let callId = await createCall();
-  let session = joinCall(userId, callId, (_, e) => {
+  yourCallId.innerText = callId.toString();
+
+  let session = await joinCall(userId, callId, (_, e) => {
     video.srcObject = e.streams[0];
   });
-
-  yourCallId.innerText = callId.toString();
 };
 
-joinCallButton.onclick = async () => {};
+joinCallButton.onclick = async () => {
+  let session = await joinCall(
+    userId,
+    parseInt(joinCallInput.value),
+    (_, e) => {
+      video.srcObject = e.streams[0];
+    },
+  );
+};

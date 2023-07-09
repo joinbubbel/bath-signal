@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UserMail {
@@ -15,17 +16,18 @@ pub enum UserMailType {
 
 #[derive(Default, Debug, Clone)]
 pub struct Mailbox {
-    queue: Vec<UserMail>,
+    queues: HashMap<UserId, Vec<UserMail>>,
 }
 
 impl Mailbox {
-    pub fn push(&mut self, mail: UserMail) {
-        self.queue.push(mail);
+    pub fn push(&mut self, user: UserId, mail: UserMail) {
+        self.queues.entry(user).or_insert(vec![]).push(mail);
     }
 
-    pub fn flush(&mut self) -> Vec<UserMail> {
-        let queue = self.queue.clone();
-        self.queue.clear();
-        queue
+    pub fn flush(&mut self, user: UserId) -> Vec<UserMail> {
+        let queue = self.queues.entry(user).or_insert(vec![]);
+        let res_queue = queue.clone();
+        queue.clear();
+        res_queue
     }
 }

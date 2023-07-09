@@ -58,6 +58,7 @@ type ResSendICE = {
 
 type CheckMailbox = {
   user: string;
+  from: string;
 };
 
 type CheckMailboxError = {
@@ -74,7 +75,7 @@ type ResCheckMailbox = {
   messages: MailboxMessage[] | null;
 };
 
-async function bathSignalApiCreateCall() {
+async function bathSignalApiCreateCall(): Promise<ResCreateCall> {
   let fetchRes = await fetch(
     "https://bath-signal-test.onrender.com/api/call/create_call",
     {
@@ -174,17 +175,22 @@ type CallId = number;
 type UserId = string;
 
 async function createCall(): Promise<CallId> {
-  return await bathSignalApiCreateCall();
+  let res = await bathSignalApiCreateCall();
+  if (res.error) {
+    throw "Got Error from Create Call.";
+  } else {
+    return res.call;
+  }
 }
 
 async function joinCall(
-  userId: UserId,
+  localUserId: UserId,
   callId: CallId,
   gotRemote: (userId: UserId, e: RTCTrackEvent) => void,
 ): Promise<CallSession> {
   let res = await bathSignalApiJoinQuery({
     call: callId,
-    user: userId,
+    user: localUserId,
   });
 
   const stream = await navigator.mediaDevices.getUserMedia({
@@ -192,11 +198,11 @@ async function joinCall(
     video: true,
   });
 
-  let call = new CallSession(stream, userId, callId, gotRemote);
+  let call = new CallSession(stream, localUserId, callId, gotRemote);
   if (res.users) {
     for (let index in res.users) {
-      const user = res.users[index];
-      call.createPeerConnection(user);
+      const remoteUserId = res.users[index];
+      call.createPeerConnection(localUserId, remoteUserId);
     }
   } else {
     throw "Got Error from Join Query.";
@@ -225,7 +231,7 @@ class CallSession {
     this.peers = new Map();
   }
 
-  async createPeerConnection(userId: UserId) {
+  async createPeerConnection(localUserId: UserId, remoteUserId: UserId) {
     const config = {
       iceServers: [
         { urls: "stun:stun.stunprotocol.org:3478" },
@@ -251,7 +257,7 @@ class CallSession {
     const peer = new RTCPeerConnection(config);
     peer.onicecandidate = async (e) => {
       let res = await bathSignalApiSendICE({
-        user: userId,
+        user: remoteUserId,
         ice: JSON.stringify(e.candidate),
       });
       if (res.error) {
@@ -259,7 +265,7 @@ class CallSession {
       }
     };
     peer.ontrack = (e) => {
-      this.gotRemote(userId, e);
+      this.gotRemote(remoteUserId, e);
     };
 
     this.stream.getTracks().forEach((track) => peer.addTrack(track));
@@ -272,7 +278,7 @@ class CallSession {
 
     if (offer.sdp) {
       let res = await bathSignalApiSendOffer({
-        user: userId,
+        user: remoteUserId,
         offer: JSON.stringify(offer),
       });
       if (res.error) {
@@ -284,7 +290,8 @@ class CallSession {
 
     setInterval(async () => {
       let res = await bathSignalApiCheckMailbox({
-        user: userId,
+        user: localUserId,
+        from: remoteUserId,
       });
       if (res.messages) {
         for (let index in res.messages) {
@@ -295,7 +302,7 @@ class CallSession {
               let answer = await peer.createAnswer();
               peer.setLocalDescription(answer);
               let res = await bathSignalApiSendAnswer({
-                user: userId,
+                user: remoteUserId,
                 answer: JSON.stringify(answer),
               });
               if (res.error) {
